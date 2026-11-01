@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+<title>DayFlow - Daily Planner</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #0b0d14;
+  color: white;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  font-size: 38px;
+  color: #8b9cff;
+}
+
+header p {
+  color: #a0a5b5;
+  margin-top: 10px;
+}
+
+.card {
+  background: #171a27;
+  padding: 25px;
+  border-radius: 18px;
+  border: 1px solid #292d40;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-bottom: 18px;
+}
+
+.input-area {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #34394f;
+  background: #0b0d14;
+  color: white;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #7788ff;
+  color: white;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+.progress {
+  height: 8px;
+  background: #303449;
+  border-radius: 10px;
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #8b9cff;
+  transition: width 0.3s;
+}
+
+#taskList {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #222638;
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.task span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.task.done span {
+  text-decoration: line-through;
+  color: #858b9e;
+}
+
+.task input {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  accent-color: #8b9cff;
+}
+
+.delete {
+  background: #ef476f;
+  padding: 8px 10px;
+}
+
+.empty {
+  text-align: center;
+  color: #858b9e;
+  padding: 20px;
+}
+
+footer {
+  text-align: center;
+  color: #777d90;
+  margin-top: 30px;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h1>DayFlow ✨</h1>
+  <p>Your day. Your goals. Your progress.</p>
+</header>
+
+<div class="card">
+  <h2>Today's Progress</h2>
+  <p id="progressText">0 of 0 tasks completed</p>
+  <div class="progress">
+    <div class="progress-bar"
+         id="progressBar"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>My Daily Tasks</h2>
+
+  <div class="input-area">
+    <input type="text"
+           id="taskInput"
+           placeholder="What do you need to do?">
+
+    <button onclick="addTask()">Add +</button>
+  </div>
+
+  <ul id="taskList"></ul>
+</div>
+
+<footer>
+  Made with ❤️ for a better everyday
+</footer>
+
+</div>
+
+<script>
+let tasks = JSON.parse(
+  localStorage.getItem("dayflowTasks") || "[]"
+);
+
+function saveTasks() {
+  localStorage.setItem(
+    "dayflowTasks",
+    JSON.stringify(tasks)
+  );
+}
+
+function addTask() {
+  const input = document.getElementById("taskInput");
+  const text = input.value.trim();
+
+  if (text === "") {
+    alert("Please enter a task!");
+    return;
+  }
+
+  tasks.push({
+    id: Date.now(),
+    text: text,
+    done: false
+  });
+
+  input.value = "";
+  saveTasks();
+  renderTasks();
+}
+
+function toggleTask(id) {
+  tasks = tasks.map(task =>
+    task.id === id
+      ? {...task, done: !task.done}
+      : task
+  );
+
+  saveTasks();
+  renderTasks();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(task =>
+    task.id !== id
+  );
+
+  saveTasks();
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  if (tasks.length === 0) {
+    list.innerHTML =
+      '<li class="empty">No tasks yet. Add your first task!</li>';
+  }
+
+  tasks.forEach(task => {
+    const li = document.createElement("li");
+    li.className = "task" +
+      (task.done ? " done" : "");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = task.done;
+
+    checkbox.addEventListener("change", () =>
+      toggleTask(task.id)
+    );
+
+    const span = document.createElement("span");
+    span.textContent = task.text;
+
+    const deleteButton =
+      document.createElement("button");
+
+    deleteButton.textContent = "✕";
+    deleteButton.className = "delete";
+
+    deleteButton.addEventListener("click", () =>
+      deleteTask(task.id)
+    );
+
+    li.append(checkbox, span, deleteButton);
+    list.appendChild(li);
+  });
+
+  const completed = tasks.filter(
+    task => task.done
+  ).length;
+
+  const total = tasks.length;
+
+  document.getElementById("progressText")
+    .textContent =
+    `${completed} of ${total} tasks completed`;
+
+  const percentage = total === 0
+    ? 0
+    : (completed / total) * 100;
+
+  document.getElementById("progressBar")
+    .style.width = percentage + "%";
+}
+
+document.getElementById("taskInput")
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      addTask();
+    }
+  });
+
+renderTasks();
+</script>
+
+</body>
+</html>
